@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixIt - Hyper-Local Service Provider & Ad Marketplace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        indigo: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [v-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-effect {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
+
+        <div v-if="toast.show" class="fixed top-5 right-5 z-50 flex items-center p-4 mb-4 text-slate-800 bg-white rounded-2xl shadow-2xl border border-slate-100 transition-all transform duration-300 max-w-sm">
+            <div :class="toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'" class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-xl mr-3">
+                <i :class="toast.type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle'" class="text-lg"></i>
+            </div>
+            <div class="text-xs font-semibold pr-2">{{ toast.message }}</div>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 ml-auto">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+
+        <div v-if="!currentUser" class="min-h-screen flex flex-col justify-between bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
+            <!-- Background glows -->
+            <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
+
+            <header class="relative z-10 max-w-7xl w-full mx-auto px-6 py-6 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-tr from-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+                        <i class="fas fa-bolt text-white text-lg"></i>
+                    </div>
+                    <span class="text-2xl font-black tracking-tight text-white">FixIt</span>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <span class="text-xs text-slate-400 hidden sm:inline">Try 1-Click Test Login:</span>
+                    <button @click="quickDemoLogin('customer')" class="px-3 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-xl backdrop-blur border border-white/10 transition">
+                        <i class="fas fa-user text-brand-400 mr-1"></i> Customer
+                    </button>
+                    <button @click="quickDemoLogin('provider')" class="px-3 py-2 text-xs font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-lg shadow-brand-500/30 transition">
+                        <i class="fas fa-tools mr-1"></i> Service Pro
+                    </button>
+                </div>
+            </header>
+
+            <main class="relative z-10 max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-1">
+                <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-extrabold uppercase tracking-wider">
+                        <i class="fas fa-star"></i>
+                        <span>Beyond Urban Company &bull; Hyper-Local Marketplace</span>
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
+                        Instant Local Pros. <br>
+                        <span class="bg-gradient-to-r from-brand-400 via-emerald-300 to-indigo-400 bg-clip-text text-transparent">Co-Book & Save Up to 25%.</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 font-light leading-relaxed">
+                        Book verified local electricians, plumbers, AC technicians, and cleaners. AI-powered diagnostic estimates, real-time live map tracking, and neighborhood group booking discounts.
+                    </p>
+
+                    <div class="pt-2 grid grid-cols-3 gap-3 max-w-md mx-auto lg:mx-0">
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <i class="fas fa-users-slash text-brand-400 text-lg mb-1"></i>
+                            <div class="text-[11px] font-bold text-slate-200">Group Co-Pooling</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <i class="fas fa-robot text-indigo-400 text-lg mb-1"></i>
+                            <div class="text-[11px] font-bold text-slate-200">AI Visual Scan</div>
+                        </div>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                            <i class="fas fa-map-marked-alt text-amber-400 text-lg mb-1"></i>
+                            <div class="text-[11px] font-bold text-slate-200">Live Map Tracking</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 w-full">
+                    <div class="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                        <!-- Mode Switcher -->
+                        <div class="flex bg-slate-800 p-1 rounded-2xl mb-6 border border-white/5">
+                            <button @click="authMode = 'login'" :class="authMode === 'login' ? 'bg-gradient-to-r from-brand-500 to-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'" class="flex-1 py-2 text-xs font-extrabold rounded-xl transition text-center">
+                                Sign In
+                            </button>
+                            <button @click="authMode = 'register'" :class="authMode === 'register' ? 'bg-gradient-to-r from-brand-500 to-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'" class="flex-1 py-2 text-xs font-extrabold rounded-xl transition text-center">
+                                Create Account
+                            </button>
+                        </div>
+
+                        <!-- Role Selector -->
+                        <div class="mb-5">
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Select Account Role:</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" @click="authRole = 'customer'" :class="authRole === 'customer' ? 'border-brand-500 bg-brand-500/10 text-white font-bold' : 'border-slate-800 bg-slate-800/40 text-slate-400'" class="p-3 border rounded-2xl flex items-center justify-center space-x-2 text-xs transition">
+                                    <i class="fas fa-user text-brand-400"></i>
+                                    <span>Customer</span>
+                                </button>
+                                <button type="button" @click="authRole = 'provider'" :class="authRole === 'provider' ? 'border-indigo-500 bg-indigo-500/10 text-white font-bold' : 'border-slate-800 bg-slate-800/40 text-slate-400'" class="p-3 border rounded-2xl flex items-center justify-center space-x-2 text-xs transition">
+                                    <i class="fas fa-store text-indigo-400"></i>
+                                    <span>Service Provider</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LOGIN FORM -->
+                        <form v-if="authMode === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+                                <input v-model="loginForm.email" type="email" required placeholder="alex@example.com" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+                                <input v-model="loginForm.password" type="password" required placeholder="••••••••" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-emerald-600 hover:from-brand-600 hover:to-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/25 transition text-xs">
+                                Sign In as {{ authRole === 'customer' ? 'Customer' : 'Provider' }}
+                            </button>
+                        </form>
+
+                        <!-- REGISTER FORM -->
+                        <form v-if="authMode === 'register'" @submit.prevent="handleRegister" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Full Name / Business Name</label>
+                                <input v-model="registerForm.name" type="text" required placeholder="John Doe" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Email</label>
+                                <input v-model="registerForm.email" type="email" required placeholder="john@example.com" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div v-if="authRole === 'provider'">
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Primary Trade Specialty</label>
+                                <select v-model="registerForm.trade" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none">
+                                    <option value="Electrical & Lighting">Electrical & Lighting</option>
+                                    <option value="Plumbing & Repairs">Plumbing & Repairs</option>
+                                    <option value="AC & Refrigeration">AC & Refrigeration</option>
+                                    <option value="Carpentry & Assembly">Carpentry & Assembly</option>
+                                    <option value="Home Cleaning & Painting">Home Cleaning & Painting</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-300 mb-1">Zip Code</label>
+                                    <input v-model="registerForm.zip" type="text" required placeholder="10001" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-300 mb-1">Phone</label>
+                                    <input v-model="registerForm.phone" type="tel" required placeholder="(555) 000-0000" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+                                <input v-model="registerForm.password" type="password" required placeholder="••••••••" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-emerald-600 hover:from-brand-600 hover:to-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/25 transition text-xs mt-2">
+                                Complete Registration
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </main>
+
+            <footer class="relative z-10 border-t border-white/5 py-4 text-center text-xs text-slate-500">
+                FixIt Local Marketplace &copy; 2026. Urban Company Competitor Platform with Group Co-Booking & AI Diagnostics.
+            </footer>
+        </div>
+
+        <div v-else class="flex-1 flex flex-col min-h-screen bg-slate-100">
+            <!-- App Header / Navigation -->
+            <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center space-x-3 cursor-pointer" @click="activeTab = 'dashboard'">
+                        <div class="w-9 h-9 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-bold shadow-md shadow-brand-500/20">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-black text-slate-900 tracking-tight">FixIt</span>
+                            <span class="hidden sm:inline-block text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full ml-2">Local Marketplace</span>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Bar -->
+                    <nav class="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl">
+                        <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-white text-brand-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-xs transition">
+                            <i class="fas fa-th-large mr-1"></i> Dashboard
+                        </button>
+                        <button v-if="currentUser.role === 'customer'" @click="activeTab = 'copool'" :class="activeTab === 'copool' ? 'bg-white text-brand-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-xs transition relative">
+                            <i class="fas fa-users-slash text-brand-500 mr-1"></i> Group Co-Book
+                            <span class="ml-1 px-1.5 py-0.5 bg-brand-500 text-white rounded-full text-[9px] font-black">SAVE 25%</span>
+                        </button>
+                        <button @click="activeTab = 'bookings'" :class="activeTab === 'bookings' ? 'bg-white text-brand-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-xs transition relative">
+                            <i class="fas fa-calendar-check mr-1"></i> Bookings
+                            <span v-if="pendingBookingsCount > 0" class="ml-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full text-[9px] font-black">{{ pendingBookingsCount }}</span>
+                        </button>
+                        <button v-if="currentUser.role === 'provider'" @click="activeTab = 'advertise'" :class="activeTab === 'advertise' ? 'bg-white text-brand-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-xs transition">
+                            <i class="fas fa-bullhorn text-amber-500 mr-1"></i> Promote Business
+                        </button>
+                        <button @click="activeTab = 'chat'" :class="activeTab === 'chat' ? 'bg-white text-brand-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'" class="px-4 py-2 rounded-xl text-xs transition">
+                            <i class="fas fa-comments mr-1"></i> Chat
+                        </button>
+                    </nav>
+
+                    <!-- User Info & Role Switcher -->
+                    <div class="flex items-center space-x-3">
+                        <button @click="toggleUserRole" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 transition flex items-center space-x-1.5" title="Switch role view for testing">
+                            <i class="fas fa-sync-alt text-brand-600"></i>
+                            <span class="hidden sm:inline">Role:</span>
+                            <span class="uppercase text-brand-700">{{ currentUser.role }}</span>
+                        </button>
+
+                        <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                            <div class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow">
+                                {{ currentUser.name.charAt(0) }}
+                            </div>
+                            <button @click="logout" class="p-2 text-slate-400 hover:text-rose-600 transition" title="Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
+
+                <div v-if="activeReminderBooking" class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 p-4 rounded-2xl shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-amber-300">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center text-slate-950 text-xl font-bold">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black uppercase tracking-wider text-slate-900">Upcoming Service Reminder</div>
+                            <div class="text-sm font-extrabold text-slate-950">
+                                {{ activeReminderBooking.service }} with <strong>{{ activeReminderBooking.providerName }}</strong> ({{ activeReminderBooking.time }})
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="openLiveTracker(activeReminderBooking)" class="px-4 py-2 bg-slate-950 text-white rounded-xl text-xs font-extrabold hover:bg-slate-800 transition flex items-center justify-center space-x-1.5 shadow-md">
+                        <i class="fas fa-satellite-dish text-brand-400"></i>
+                        <span>Track Live Status</span>
+                    </button>
+                </div>
+
+                <section class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 bg-amber-400 text-slate-950 rounded-full font-black text-[10px] uppercase tracking-wider flex items-center gap-1">
+                                <i class="fas fa-crown"></i> Local Business Banner Spotlight
+                            </span>
+                            <span class="text-xs text-slate-400 hidden sm:inline">Top deals in {{ currentUser.zip }}</span>
+                        </div>
+                        <button v-if="currentUser.role === 'provider'" @click="activeTab = 'advertise'" class="text-xs text-amber-400 font-bold hover:underline">
+                            + Advertise Your Business ($20 / 15 Days)
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div v-for="ad in ads" :key="ad.id" class="bg-white/10 border border-white/10 rounded-2xl p-4 backdrop-blur hover:border-brand-500/50 transition flex flex-col justify-between group">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-2xl">{{ ad.icon }}</span>
+                                    <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+                                        {{ ad.discount }} OFF
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-white text-sm mb-1 group-hover:text-brand-400 transition">{{ ad.title }}</h4>
+                                <p class="text-xs text-slate-300 mb-3 line-clamp-2">{{ ad.description }}</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-3 border-t border-white/10">
+                                <span class="text-[11px] text-slate-400"><i class="fas fa-store text-brand-400 mr-1"></i>{{ ad.providerName }}</span>
+                                <button @click="claimAdOffer(ad)" class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition shadow-md shadow-brand-500/30">
+                                    Book Deal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div v-if="currentUser.role === 'customer'" class="space-y-6">
+
+                    <!-- Unique Competitor Feature Cards Bar -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Feature 1: Group Co-Booking -->
+                        <div @click="activeTab = 'copool'" class="bg-gradient-to-r from-emerald-600 to-brand-700 text-white p-5 rounded-2xl shadow-md cursor-pointer hover:shadow-lg transition flex items-center justify-between">
+                            <div class="space-y-1">
+                                <span class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-black rounded uppercase">Urban Company Killer</span>
+                                <h3 class="text-base font-extrabold">🏢 Neighborhood Group Co-Booking</h3>
+                                <p class="text-xs text-emerald-100">Join neighbors in your apartment building booking services today & get 25% OFF!</p>
+                            </div>
+                            <div class="text-3xl pl-3"><i class="fas fa-users-line"></i></div>
+                        </div>
+
+                        <!-- Feature 2: AI Visual Diagnostic -->
+                        <div @click="openAiDiagnosticModal" class="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white p-5 rounded-2xl shadow-md cursor-pointer hover:shadow-lg transition flex items-center justify-between">
+                            <div class="space-y-1">
+                                <span class="px-2 py-0.5 bg-white/20 text-white text-[10px] font-black rounded uppercase">Instant Visual Quote</span>
+                                <h3 class="text-base font-extrabold">🤖 AI Diagnostic & $2 Live Video Call</h3>
+                                <p class="text-xs text-indigo-100">Describe or upload repair photo for instant cost estimation before booking.</p>
+                            </div>
+                            <div class="text-3xl pl-3"><i class="fas fa-video"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- Category Quick Filter Bar -->
+                    <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-black uppercase text-slate-400 tracking-wider">Service Categories</h3>
+                            <button v-if="selectedCategory" @click="selectedCategory = ''" class="text-xs text-brand-600 font-bold hover:underline">Clear Filter</button>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                            <button v-for="cat in categories" :key="cat.name" @click="selectedCategory = (selectedCategory === cat.name ? '' : cat.name)" :class="selectedCategory === cat.name ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20 border-brand-500' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'" class="p-3 border rounded-2xl flex flex-col items-center text-center transition">
+                                <span class="text-2xl mb-1">{{ cat.icon }}</span>
+                                <span class="text-xs font-bold">{{ cat.name }}</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Advanced Multi-Filter & Search Header Bar -->
+                    <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                            <!-- Search Bar -->
+                            <div class="md:col-span-4 relative">
+                                <i class="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                                <input v-model="searchQuery" type="text" placeholder="Search plumber, electrician, AC fix..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-brand-500">
+                            </div>
+
+                            <!-- Rating Filter -->
+                            <div class="md:col-span-2">
+                                <select v-model="ratingFilter" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="0">All Ratings</option>
+                                    <option value="4.0">⭐ 4.0+ Stars</option>
+                                    <option value="4.5">⭐ 4.5+ Stars</option>
+                                    <option value="4.8">⭐ 4.8+ Stars</option>
+                                </select>
+                            </div>
+
+                            <!-- Max Distance Filter -->
+                            <div class="md:col-span-2">
+                                <select v-model="distanceFilter" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="99">Any Distance</option>
+                                    <option value="2">Within 2 km</option>
+                                    <option value="5">Within 5 km</option>
+                                    <option value="10">Within 10 km</option>
+                                </select>
+                            </div>
+
+                            <!-- Price Sort -->
+                            <div class="md:col-span-2">
+                                <select v-model="priceSort" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="default">Sort by Recommended</option>
+                                    <option value="low">Price: Low to High</option>
+                                    <option value="high">Price: High to Low</option>
+                                    <option value="rating">Highest Rated</option>
+                                </select>
+                            </div>
+
+                            <!-- Availability Switcher -->
+                            <div class="md:col-span-2 flex items-center justify-end">
+                                <label class="cursor-pointer flex items-center space-x-2 text-xs font-bold text-slate-700">
+                                    <input v-model="availabilityFilter" type="checkbox" class="rounded text-brand-500 focus:ring-brand-500">
+                                    <span>Online Now Only</span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Providers Cards Directory Grid -->
+                    <section class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-base font-extrabold text-slate-900">
+                                Verified Local Service Providers ({{ filteredProviders.length }})
+                            </h2>
+                            <span class="text-xs text-slate-500">Zip Code: <strong>{{ currentUser.zip }}</strong></span>
+                        </div>
+
+                        <div v-if="filteredProviders.length === 0" class="bg-white rounded-2xl p-12 text-center text-slate-400">
+                            <i class="fas fa-search-minus text-4xl mb-3"></i>
+                            <p class="text-xs font-medium">No service providers match your active filters.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div v-for="provider in filteredProviders" :key="provider.id" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-xl transition flex flex-col justify-between">
+                                <div>
+                                    <!-- Header -->
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="relative">
+                                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-indigo-600 text-white font-black text-lg flex items-center justify-center shadow-md">
+                                                    {{ provider.name.charAt(0) }}
+                                                </div>
+                                                <span :class="provider.onlineStatus ? 'bg-emerald-500' : 'bg-slate-300'" class="w-3.5 h-3.5 rounded-full border-2 border-white absolute -bottom-1 -right-1" :title="provider.onlineStatus ? 'Online' : 'Offline'"></span>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-1">
+                                                    {{ provider.name }}
+                                                    <i class="fas fa-check-circle text-brand-500 text-xs" title="Verified Background Check"></i>
+                                                </h3>
+                                                <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase">{{ provider.trade }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-sm font-black text-brand-700">${{ provider.hourlyRate }}</div>
+                                            <span class="text-[10px] text-slate-400">per hour</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-xs text-slate-600 mb-3 line-clamp-2">{{ provider.bio }}</p>
+
+                                    <!-- Ratings & Distance Badge -->
+                                    <div class="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-star text-amber-400"></i>
+                                            <span class="font-bold text-slate-800">{{ provider.rating }}</span>
+                                            <span class="text-slate-400">({{ provider.reviewsCount }})</span>
+                                        </div>
+                                        <div class="text-slate-500 text-[11px]">
+                                            <i class="fas fa-location-arrow text-rose-500 mr-1"></i>{{ provider.distanceKm }} km away
+                                        </div>
+                                    </div>
+
+                                    <!-- Recent Work Portfolio Preview Snippet -->
+                                    <div class="mb-4 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100/80">
+                                        <div class="text-[10px] font-black uppercase text-emerald-800 mb-1">
+                                            <i class="fas fa-history mr-1"></i> Recent Job Completed:
+                                        </div>
+                                        <div class="text-xs text-slate-700 font-semibold truncate">{{ provider.recentWork[0]?.title }}</div>
+                                        <div class="text-[10px] text-slate-500 italic">"{{ provider.recentWork[0]?.customerReview }}"</div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                                    <button @click="openProviderProfile(provider)" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition">
+                                        <i class="fas fa-user-circle mr-1 text-slate-500"></i> Profile & Portfolio
+                                    </button>
+                                    <button @click="openBookingModal(provider)" class="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-extrabold rounded-xl shadow-md transition">
+                                        <i class="fas fa-calendar-plus mr-1"></i> Book Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div v-if="activeTab === 'copool' && currentUser.role === 'customer'" class="space-y-6">
+                    <div class="bg-gradient-to-r from-emerald-600 to-brand-700 rounded-3xl p-6 text-white shadow-xl">
+                        <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-black uppercase tracking-wider">Neighborhood Co-Booking Hub</span>
+                        <h2 class="text-2xl font-black mt-2">Book Services with Neighbors & Save 25%</h2>
+                        <p class="text-xs text-emerald-100 mt-1 max-w-xl">When multiple households in your apartment block or neighborhood schedule repairs on the same day, service providers reduce travel costs and pass savings to you!</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div v-for="pool in coPools" :key="pool.id" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="px-2.5 py-1 bg-amber-100 text-amber-800 font-black text-xs rounded-full uppercase">
+                                        <i class="fas fa-building mr-1"></i> {{ pool.buildingName }}
+                                    </span>
+                                    <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                                        SAVE {{ pool.discountPercent }}% OFF
+                                    </span>
+                                </div>
+
+                                <h3 class="text-base font-extrabold text-slate-900 mb-1">{{ pool.service }}</h3>
+                                <p class="text-xs text-slate-500 mb-4">Assigned Pro: <strong>{{ pool.providerName }}</strong></p>
+
+                                <!-- Progress Bar -->
+                                <div class="space-y-1 mb-4">
+                                    <div class="flex justify-between text-xs font-bold text-slate-700">
+                                        <span>Joined Neighbors</span>
+                                        <span>{{ pool.currentParticipants }} of {{ pool.requiredParticipants }} Households</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                        <div class="bg-brand-500 h-full rounded-full transition-all duration-500" :style="{ width: (pool.currentParticipants / pool.requiredParticipants * 100) + '%' }"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button @click="joinCoPool(pool)" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Join Co-Booking Slot (Save {{ pool.discountPercent }}%)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentUser.role === 'provider'" class="space-y-6">
+                    <!-- Provider Header Metrics Bar -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
+                                {{ currentUser.name.charAt(0) }}
+                            </div>
+                            <div>
+                                <h2 class="text-base font-black text-slate-900 flex items-center gap-2">
+                                    {{ currentUser.name }}
+                                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">VERIFIED PRO</span>
+                                </h2>
+                                <p class="text-xs text-slate-500">Service Coverage Zip: {{ currentUser.zip }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Availability Toggle -->
+                        <div class="flex items-center space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <span class="text-xs font-bold text-slate-700">Work Availability Status:</span>
+                            <button @click="toggleProviderOnline" :class="providerOnline ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'" class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition">
+                                <i class="fas fa-circle text-[8px] mr-1"></i> {{ providerOnline ? 'ONLINE & ACCEPTING JOBS' : 'OFFLINE' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-xs text-slate-400 font-bold mb-1">Total Revenue Earned</div>
+                            <div class="text-2xl font-black text-slate-900">$1,840.00</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-xs text-slate-400 font-bold mb-1">Active Job Requests</div>
+                            <div class="text-2xl font-black text-brand-600">{{ providerBookings.filter(b => b.status !== 'Paid').length }}</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-xs text-slate-400 font-bold mb-1">Completed Jobs</div>
+                            <div class="text-2xl font-black text-slate-900">42</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-xs text-slate-400 font-bold mb-1">Customer Rating</div>
+                            <div class="text-2xl font-black text-amber-500">4.9 ★</div>
+                        </div>
+                    </div>
+
+                    <!-- Provider Job Manager Table -->
+                    <section class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h3 class="text-base font-extrabold text-slate-900 mb-4">Job Requests & Live Stage Controller</h3>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-400 uppercase tracking-wider">
+                                        <th class="py-3 px-4 font-bold">Customer Name</th>
+                                        <th class="py-3 px-4 font-bold">Requested Service</th>
+                                        <th class="py-3 px-4 font-bold">Date & Time</th>
+                                        <th class="py-3 px-4 font-bold">Address</th>
+                                        <th class="py-3 px-4 font-bold">Status Stage</th>
+                                        <th class="py-3 px-4 font-bold text-right">Job Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="job in providerBookings" :key="job.id" class="hover:bg-slate-50">
+                                        <td class="py-4 px-4 font-bold text-slate-900">{{ job.customerName }}</td>
+                                        <td class="py-4 px-4 text-slate-700 font-semibold">{{ job.service }}</td>
+                                        <td class="py-4 px-4 text-slate-600">{{ job.date }} @ {{ job.time }}</td>
+                                        <td class="py-4 px-4 text-slate-600">
+                                            <i class="fas fa-map-marker-alt text-rose-500 mr-1"></i>{{ job.address }}
+                                        </td>
+                                        <td class="py-4 px-4">
+                                            <span :class="{
+                                                'bg-amber-100 text-amber-800': job.status === 'Confirmed',
+                                                'bg-blue-100 text-blue-800': job.status === 'En-Route',
+                                                'bg-purple-100 text-purple-800': job.status === 'In Progress',
+                                                'bg-emerald-100 text-emerald-800': job.status === 'Work Done',
+                                                'bg-slate-100 text-slate-800': job.status === 'Paid'
+                                            }" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase">
+                                                {{ job.status }}
+                                            </span>
+                                        </td>
+                                        <td class="py-4 px-4 text-right space-x-2">
+                                            <button v-if="job.status === 'Confirmed'" @click="updateJobStage(job, 'En-Route')" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                                                Start En-Route
+                                            </button>
+                                            <button v-if="job.status === 'En-Route'" @click="updateJobStage(job, 'In Progress')" class="px-3 py-1.5 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition">
+                                                Arrived & Start Work
+                                            </button>
+                                            <button v-if="job.status === 'In Progress'" @click="updateJobStage(job, 'Work Done')" class="px-3 py-1.5 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition shadow">
+                                                <i class="fas fa-check-circle mr-1"></i> Mark Work Done
+                                            </button>
+                                            <span v-if="job.status === 'Work Done'" class="text-slate-400 font-bold">Awaiting Customer Payment</span>
+                                            <span v-if="job.status === 'Paid'" class="text-emerald-600 font-extrabold"><i class="fas fa-check-double mr-1"></i> Payment Received</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <div v-if="activeTab === 'bookings'" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-900 mb-4">Service Bookings History</h2>
+
+                    <div v-if="userBookings.length === 0" class="text-center py-12 text-slate-400">
+                        <i class="fas fa-calendar-times text-4xl mb-3"></i>
+                        <p class="text-xs font-medium">No bookings found.</p>
+                    </div>
+
+                    <div v-else class="space-y-4">
+                        <div v-for="b in userBookings" :key="b.id" class="border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-brand-600 text-xl font-bold">
+                                    <i class="fas fa-tools"></i>
+                                </div>
+                                <div>
+                                    <div class="font-extrabold text-slate-900 text-sm">{{ b.service }}</div>
+                                    <div class="text-xs text-slate-500">Provider: <strong>{{ b.providerName }}</strong> &bull; {{ b.date }} at {{ b.time }}</div>
+                                    <div class="text-xs text-slate-400 mt-1"><i class="fas fa-map-pin text-rose-500 mr-1"></i>{{ b.address }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <span :class="{
+                                    'bg-amber-100 text-amber-800': b.status === 'Confirmed',
+                                    'bg-blue-100 text-blue-800': b.status === 'En-Route',
+                                    'bg-purple-100 text-purple-800': b.status === 'In Progress',
+                                    'bg-emerald-100 text-emerald-800': b.status === 'Work Done',
+                                    'bg-slate-100 text-slate-800': b.status === 'Paid'
+                                }" class="px-3 py-1 rounded-full text-xs font-extrabold">
+                                    {{ b.status }}
+                                </span>
+
+                                <button @click="openLiveTracker(b)" class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition">
+                                    <i class="fas fa-satellite-dish text-brand-400 mr-1"></i> Live Tracker
+                                </button>
+
+                                <button v-if="b.status === 'Work Done' && currentUser.role === 'customer'" @click="openFeedbackAndPayment(b)" class="px-3 py-1.5 bg-amber-400 text-slate-950 rounded-xl text-xs font-black hover:bg-amber-500 transition shadow">
+                                    Feedback & Pay Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'advertise'" class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm max-w-3xl mx-auto space-y-6">
+                    <div class="text-center">
+                        <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-black uppercase">Provider Monetization & Local Branding</span>
+                        <h2 class="text-2xl font-black text-slate-900 mt-2">Promote Your Business in Your Area</h2>
+                        <p class="text-xs text-slate-500 mt-1">Sponsor top-of-dashboard banners shown to customer households in zip code {{ currentUser.zip }}.</p>
+                    </div>
+
+                    <form @submit.prevent="purchaseAdCampaign" class="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Select Advertising Duration Plan</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" @click="adForm.duration = '15'; adForm.price = 20" :class="adForm.duration === '15' ? 'border-brand-500 bg-brand-50 font-bold' : 'border-slate-200 bg-white'" class="p-3 border rounded-xl text-left transition">
+                                    <div class="text-xs font-extrabold text-slate-900">15 Days Local Campaign</div>
+                                    <div class="text-lg font-black text-brand-600">$20.00</div>
+                                </button>
+                                <button type="button" @click="adForm.duration = '30'; adForm.price = 35" :class="adForm.duration === '30' ? 'border-brand-500 bg-brand-50 font-bold' : 'border-slate-200 bg-white'" class="p-3 border rounded-xl text-left transition">
+                                    <div class="text-xs font-extrabold text-slate-900">30 Days Best Value Plan</div>
+                                    <div class="text-lg font-black text-brand-600">$35.00 <span class="text-[10px] text-emerald-600">(Save $5)</span></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Banner Headline</label>
+                            <input v-model="adForm.title" type="text" required placeholder="e.g. Master Electrician - 20% Off Lighting & Fans" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Discount Offer Tag</label>
+                                <input v-model="adForm.discount" type="text" required placeholder="20%" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                                <select v-model="adForm.category" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="HVAC">HVAC</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Description Text</label>
+                            <textarea v-model="adForm.description" required rows="3" placeholder="Same-day service call. Licensed & insured local technician..." class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs"></textarea>
+                        </div>
+
+                        <!-- Live Banner Preview -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Live Banner Preview:</label>
+                            <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                                <div>
+                                    <span class="bg-emerald-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded uppercase">{{ adForm.discount || '20%' }} OFF</span>
+                                    <div class="font-bold text-sm mt-1">{{ adForm.title || 'Your Banner Title Here' }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ currentUser.name }} &bull; {{ currentUser.zip }}</div>
+                                </div>
+                                <span class="text-2xl">📢</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold rounded-xl shadow-lg transition text-xs flex items-center justify-center space-x-2">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Pay ${{ adForm.price }} & Publish {{ adForm.duration }}-Day Local Campaign</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div v-if="activeTab === 'chat'" class="bg-white rounded-2xl shadow-sm border border-slate-200 h-[500px] flex overflow-hidden">
+                    <div class="w-1/3 border-r border-slate-200 bg-slate-50 flex flex-col">
+                        <div class="p-4 border-b border-slate-200 font-bold text-xs text-slate-700">Messages</div>
+                        <div class="overflow-y-auto flex-1 divide-y divide-slate-100">
+                            <div v-for="c in chats" :key="c.id" @click="activeChatId = c.id" :class="activeChatId === c.id ? 'bg-white font-bold border-l-4 border-brand-500' : 'hover:bg-slate-100'" class="p-3 cursor-pointer transition flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-brand-500 text-white font-bold flex items-center justify-center text-xs">
+                                    {{ c.name.charAt(0) }}
+                                </div>
+                                <div class="flex-1 overflow-hidden">
+                                    <div class="text-xs font-bold text-slate-800 truncate">{{ c.name }}</div>
+                                    <div class="text-[10px] text-slate-400 truncate">{{ c.lastMessage }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col bg-white">
+                        <div v-if="currentChat" class="p-4 border-b border-slate-200 font-bold text-xs bg-slate-50 flex justify-between items-center">
+                            <span>{{ currentChat.name }}</span>
+                            <span class="text-[10px] text-emerald-600 font-bold"><i class="fas fa-circle text-[8px] mr-1"></i> Online</span>
+                        </div>
+
+                        <div v-if="currentChat" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
+                            <div v-for="(m, i) in currentChat.messages" :key="i" :class="m.sender === currentUser.name ? 'justify-end' : 'justify-start'" class="flex">
+                                <div :class="m.sender === currentUser.name ? 'bg-brand-500 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'" class="max-w-xs px-3.5 py-2 rounded-2xl text-xs">
+                                    <p>{{ m.text }}</p>
+                                    <span class="text-[9px] opacity-70 block text-right mt-1">{{ m.time }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="currentChat" class="p-3 border-t border-slate-200 flex space-x-2">
+                            <input v-model="newMessageText" @keyup.enter="sendMessage" type="text" placeholder="Type message..." class="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                            <button @click="sendMessage" class="px-4 py-2 bg-brand-500 text-white rounded-xl text-xs font-bold">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <div v-if="profileModal.open" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-100 custom-scrollbar">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-500 to-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg">
+                            {{ profileModal.provider?.name.charAt(0) }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900 flex items-center gap-1">
+                                {{ profileModal.provider?.name }}
+                                <i class="fas fa-check-circle text-brand-500 text-sm"></i>
+                            </h3>
+                            <div class="text-xs text-slate-500 font-medium">{{ profileModal.provider?.trade }} &bull; {{ profileModal.provider?.zip }}</div>
+                        </div>
+                    </div>
+                    <button @click="profileModal.open = false" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-lg"></i></button>
+                </div>
+
+                <!-- Profile Tabs -->
+                <div class="flex border-b border-slate-200 mb-4 text-xs font-bold">
+                    <button @click="profileModal.activeTab = 'about'" :class="profileModal.activeTab === 'about' ? 'border-b-2 border-brand-500 text-brand-700' : 'text-slate-500'" class="pb-2 mr-4">About & Rates</button>
+                    <button @click="profileModal.activeTab = 'portfolio'" :class="profileModal.activeTab === 'portfolio' ? 'border-b-2 border-brand-500 text-brand-700' : 'text-slate-500'" class="pb-2">Recent Work Portfolio ({{ profileModal.provider?.recentWork.length }})</button>
+                </div>
+
+                <div v-if="profileModal.activeTab === 'about'" class="space-y-4 text-xs text-slate-600">
+                    <p>{{ profileModal.provider?.bio }}</p>
+                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl">
+                        <div>
+                            <span class="text-slate-400 block">Hourly Rate</span>
+                            <span class="text-base font-black text-slate-900">${{ profileModal.provider?.hourlyRate }}/hr</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block">Rating</span>
+                            <span class="text-base font-black text-amber-500">{{ profileModal.provider?.rating }} ★ ({{ profileModal.provider?.reviewsCount }} reviews)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div v-if="profileModal.activeTab === 'portfolio'" class="space-y-4">
+                    <div v-for="work in profileModal.provider?.recentWork" :key="work.id" class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-extrabold text-slate-900 text-xs">{{ work.title }}</h4>
+                                <span class="text-[10px] text-slate-400">Completed on {{ work.date }} &bull; Job Cost: ${{ work.cost }}</span>
+                            </div>
+                            <span class="text-amber-500 font-black text-xs">{{ work.rating }} ★</span>
+                        </div>
+                        <p class="text-xs text-slate-600 italic bg-white p-2.5 rounded-xl border border-slate-200">"{{ work.customerReview }}"</p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button @click="profileModal.open = false; openBookingModal(profileModal.provider)" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-md">
+                        Proceed to Booking Slot Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="aiDiagnostic.open" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-sm"><i class="fas fa-robot"></i></span>
+                        <h3 class="font-black text-slate-900 text-base">AI Visual Repair Estimator</h3>
+                    </div>
+                    <button @click="aiDiagnostic.open = false" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Describe the issue or repair needed</label>
+                        <textarea v-model="aiDiagnostic.problemDesc" rows="3" placeholder="e.g., Water leaking under kitchen sink, or ceiling fan making clicking noise..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"></textarea>
+                    </div>
+
+                    <button @click="runAiScan" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2">
+                        <i class="fas fa-sparkles"></i>
+                        <span>Calculate Instant Cost Estimate</span>
+                    </button>
+
+                    <div v-if="aiDiagnostic.estimatedCost" class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
+                        <div class="text-xs text-emerald-800 font-bold">Estimated Flat Repair Cost Range:</div>
+                        <div class="text-2xl font-black text-emerald-600 my-1">${{ aiDiagnostic.estimatedCost.min }} - ${{ aiDiagnostic.estimatedCost.max }}</div>
+                        <div class="text-[10px] text-emerald-700">Includes standard labor & initial inspection fee</div>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-4 text-center">
+                        <span class="text-xs text-slate-500 font-medium block mb-2">Unsure? Connect with a technician immediately:</span>
+                        <button @click="startVideoDiagnostic" class="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs rounded-xl shadow flex items-center justify-center space-x-2">
+                            <i class="fas fa-video"></i>
+                            <span>Start $2 Live 5-Min Video Diagnostic Call</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="trackingModal.open" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-base">Live Work Status & GPS Tracker</h3>
+                        <p class="text-xs text-slate-500">Booking ID: {{ trackingModal.booking?.id }}</p>
+                    </div>
+                    <button @click="trackingModal.open = false" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                </div>
+
+                <!-- Progress Step Bar -->
+                <div class="grid grid-cols-4 gap-2 text-center text-[10px] font-bold mb-6">
+                    <div :class="['Confirmed', 'En-Route', 'In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'text-brand-600 font-black' : 'text-slate-300'">
+                        <div class="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center" :class="['Confirmed', 'En-Route', 'In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'bg-brand-500 text-white' : 'bg-slate-200'">1</div>
+                        Confirmed
+                    </div>
+                    <div :class="['En-Route', 'In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'text-brand-600 font-black' : 'text-slate-300'">
+                        <div class="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center" :class="['En-Route', 'In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'bg-brand-500 text-white' : 'bg-slate-200'">2</div>
+                        En-Route
+                    </div>
+                    <div :class="['In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'text-brand-600 font-black' : 'text-slate-300'">
+                        <div class="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center" :class="['In Progress', 'Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'bg-brand-500 text-white' : 'bg-slate-200'">3</div>
+                        In Progress
+                    </div>
+                    <div :class="['Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'text-brand-600 font-black' : 'text-slate-300'">
+                        <div class="w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center" :class="['Work Done', 'Paid'].includes(trackingModal.booking?.status) ? 'bg-brand-500 text-white' : 'bg-slate-200'">4</div>
+                        Completed
+                    </div>
+                </div>
+
+                <!-- Map Simulation Canvas Frame -->
+                <div class="relative bg-slate-900 rounded-2xl h-48 overflow-hidden mb-4 flex items-center justify-center border border-slate-800">
+                    <div class="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px] opacity-20"></div>
+                    <div class="relative text-center">
+                        <div class="w-12 h-12 bg-brand-500 text-white rounded-full flex items-center justify-center text-xl mx-auto mb-2 pulse-effect shadow-lg">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <div class="text-xs font-bold text-white">Technician {{ trackingModal.booking?.providerName }}</div>
+                        <div class="text-[11px] text-brand-400 font-semibold mt-1">Estimated Arrival ETA: 12 Minutes</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button @click="activeTab = 'chat'; trackingModal.open = false" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl">
+                        <i class="fas fa-comment-dots mr-1"></i> Chat Technician
+                    </button>
+                    <button v-if="trackingModal.booking?.status === 'Work Done'" @click="openFeedbackAndPayment(trackingModal.booking)" class="flex-1 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-black rounded-xl">
+                        Proceed to Feedback & Pay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="paymentModal.open" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+                <div class="text-center mb-4">
+                    <span class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl inline-flex items-center justify-center text-xl mb-2"><i class="fas fa-receipt"></i></span>
+                    <h3 class="font-black text-slate-900 text-base">Job Complete & Payment</h3>
+                    <p class="text-xs text-slate-500">Provided by {{ paymentModal.booking?.providerName }}</p>
+                </div>
+
+                <!-- Feedback Section -->
+                <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-4">
+                    <label class="block text-xs font-bold text-slate-700 text-center">Required Service Rating</label>
+                    <div class="flex justify-center space-x-2 text-2xl text-amber-400">
+                        <i v-for="star in 5" :key="star" @click="paymentModal.rating = star" :class="star <= paymentModal.rating ? 'fas fa-star cursor-pointer' : 'far fa-star cursor-pointer'"></i>
+                    </div>
+                    <textarea v-model="paymentModal.comment" rows="2" placeholder="Describe quality of work..." class="w-full bg-white border border-slate-300 rounded-xl p-2 text-xs"></textarea>
+                    <div class="text-[10px] text-slate-500 flex items-center"><i class="fas fa-map-pin text-rose-500 mr-1"></i> Location Tagged: {{ paymentModal.locationTag }}</div>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-700">Select Payment Method</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" @click="paymentModal.method = 'upi'" :class="paymentModal.method === 'upi' ? 'border-brand-500 bg-brand-50 font-bold' : 'border-slate-200 bg-white'" class="p-2 border rounded-xl text-xs text-center">
+                            UPI / QR
+                        </button>
+                        <button type="button" @click="paymentModal.method = 'card'" :class="paymentModal.method === 'card' ? 'border-brand-500 bg-brand-50 font-bold' : 'border-slate-200 bg-white'" class="p-2 border rounded-xl text-xs text-center">
+                            Card
+                        </button>
+                        <button type="button" @click="paymentModal.method = 'cash'" :class="paymentModal.method === 'cash' ? 'border-brand-500 bg-brand-50 font-bold' : 'border-slate-200 bg-white'" class="p-2 border rounded-xl text-xs text-center">
+                            Cash
+                        </button>
+                    </div>
+
+                    <button @click="processPayment" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-lg transition">
+                        Pay Total $75.00 & Complete Service
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="bookingModal.open" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-extrabold text-slate-900 text-base">Book {{ bookingModal.provider?.name }}</h3>
+                    <button @click="bookingModal.open = false" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form @submit.prevent="confirmBooking" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Service Task</label>
+                        <input v-model="bookingModal.service" type="text" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                            <input v-model="bookingModal.date" type="date" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Time Slot</label>
+                            <select v-model="bookingModal.time" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                                <option>09:00 AM</option>
+                                <option>12:00 PM</option>
+                                <option>04:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Address</label>
+                        <input v-model="bookingModal.address" type="text" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-md transition mt-2">
+                        Confirm Service Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentUser: null,
+                    authMode: 'login',
+                    authRole: 'customer',
+
+                    loginForm: { email: '', password: '' },
+                    registerForm: { name: '', email: '', password: '', phone: '', trade: 'Electrical & Lighting', zip: '10001' },
+
+                    activeTab: 'dashboard',
+                    searchQuery: '',
+                    selectedCategory: '',
+                    ratingFilter: '0',
+                    distanceFilter: '99',
+                    priceSort: 'default',
+                    availabilityFilter: false,
+                    providerOnline: true,
+
+                    toast: { show: false, message: '', type: 'success' },
+
+                    categories: [
+                        { name: 'Electrical', icon: '⚡' },
+                        { name: 'Plumbing', icon: '🚰' },
+                        { name: 'HVAC', icon: '❄️' },
+                        { name: 'Carpentry', icon: '🔨' },
+                        { name: 'Cleaning', icon: '🧹' },
+                        { name: 'Painting', icon: '🎨' }
+                    ],
+
+                    ads: [
+                        { id: 1, title: '⚡ 20% Off Ceiling Fans & Lighting Rewire', discount: '20%', description: 'Quick 1-hour emergency response for all electrical fixtures in 10001.', providerName: 'Sam\'s Electric Pro', category: 'Electrical', icon: '💡' },
+                        { id: 2, title: '🚰 Emergency Plumbing & Drain Unclog', discount: '15%', description: 'Free home inspection included with water heater repairs.', providerName: 'Apex Plumbing Co.', category: 'Plumbing', icon: '🚰' },
+                        { id: 3, title: '❄️ Summer AC Filter & Gas Recharge', discount: '25%', description: 'Deep coil cleaning and refrigerant pressure test.', providerName: 'CoolAir Technicians', category: 'HVAC', icon: '❄️' }
+                    ],
+
+                    coPools: [
+                        { id: 1, buildingName: 'Skyline Apartments (Block B)', service: 'AC Deep Service & Gas Fill', discountPercent: 25, requiredParticipants: 4, currentParticipants: 3, providerName: 'CoolAir Technicians' },
+                        { id: 2, buildingName: 'Oakridge Society', service: 'Full Electrical Safety Audit', discountPercent: 20, requiredParticipants: 3, currentParticipants: 2, providerName: 'Sam\'s Electric Pro' }
+                    ],
+
+                    providers: [
+                        {
+                            id: 101,
+                            name: 'Sam\'s Electric Pro',
+                            trade: 'Electrical',
+                            rating: 4.9,
+                            reviewsCount: 42,
+                            hourlyRate: 65,
+                            distanceKm: 1.2,
+                            zip: '10001',
+                            bio: 'Licensed master electrician with 8+ years experience in ceiling fans, chandeliers, and fuse boxes.',
+                            onlineStatus: true,
+                            recentWork: [
+                                { id: 1, title: 'Ceiling Fan & Dimmer Installation', date: 'Sept 24, 2026', rating: '5.0', customerReview: 'Arrived right on time, super neat work!', cost: 85 }
+                            ]
+                        },
+                        {
+                            id: 102,
+                            name: 'Apex Plumbing Co.',
+                            trade: 'Plumbing',
+                            rating: 4.8,
+                            reviewsCount: 38,
+                            hourlyRate: 70,
+                            distanceKm: 2.8,
+                            zip: '10001',
+                            bio: 'Specialist in leak detection, drain unblocking, faucet installation, and water heater repair.',
+                            onlineStatus: true,
+                            recentWork: [
+                                { id: 2, title: 'Kitchen Sink Drain Replacement', date: 'Sept 22, 2026', rating: '4.9', customerReview: 'Fixed the leak within 30 minutes!', cost: 95 }
+                            ]
+                        },
+                        {
+                            id: 103,
+                            name: 'CoolAir Technicians',
+                            trade: 'HVAC',
+                            rating: 5.0,
+                            reviewsCount: 29,
+                            hourlyRate: 80,
+                            distanceKm: 4.5,
+                            zip: '10002',
+                            bio: 'Certified HVAC team providing prompt AC cooling repairs and preventive maintenance.',
+                            onlineStatus: false,
+                            recentWork: [
+                                { id: 3, title: 'Split AC Deep Cleaning & Filter Swap', date: 'Sept 20, 2026', rating: '5.0', customerReview: 'AC works like brand new now!', cost: 110 }
+                            ]
+                        }
+                    ],
+
+                    bookings: [
+                        { id: 'BK-1001', service: 'Ceiling Fan & Light Installation', customerName: 'Alex Johnson', providerName: 'Sam\'s Electric Pro', date: '2026-09-27', time: '04:00 PM', address: '742 Evergreen Terrace, 10001', status: 'En-Route', reviewed: false },
+                        { id: 'BK-1002', service: 'Plumbing Leak Fix', customerName: 'Alex Johnson', providerName: 'Apex Plumbing Co.', date: '2026-09-25', time: '02:00 PM', address: '742 Evergreen Terrace, 10001', status: 'Paid', reviewed: true }
+                    ],
+
+                    adForm: { duration: '15', price: 20, title: '', discount: '20%', category: 'Electrical', description: '' },
+                    bookingModal: { open: false, provider: null, service: '', date: '', time: '04:00 PM', address: '' },
+                    profileModal: { open: false, provider: null, activeTab: 'about' },
+                    aiDiagnostic: { open: false, problemDesc: '', estimatedCost: null },
+                    trackingModal: { open: false, booking: null },
+                    paymentModal: { open: false, booking: null, rating: 5, comment: '', method: 'upi', locationTag: 'Lat 40.7128, Lng -74.0060 (Verified)' },
+
+                    activeChatId: 1,
+                    newMessageText: '',
+                    chats: [
+                        {
+                            id: 1,
+                            name: 'Sam\'s Electric Pro',
+                            lastMessage: 'I am en-route to your address right now!',
+                            messages: [
+                                { sender: 'Sam\'s Electric Pro', text: 'Hi Alex, I am on my way with the fan mounting kit.', time: '03:45 PM' },
+                                { sender: 'Alex Johnson', text: 'Great, thanks Sam!', time: '03:47 PM' }
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            computed: {
+                filteredProviders() {
+                    let list = [...this.providers];
+
+                    if (this.selectedCategory) {
+                        list = list.filter(p => p.trade.toLowerCase().includes(this.selectedCategory.toLowerCase()));
+                    }
+
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        list = list.filter(p => p.name.toLowerCase().includes(q) || p.trade.toLowerCase().includes(q));
+                    }
+
+                    if (parseFloat(this.ratingFilter) > 0) {
+                        list = list.filter(p => p.rating >= parseFloat(this.ratingFilter));
+                    }
+
+                    if (parseFloat(this.distanceFilter) < 99) {
+                        list = list.filter(p => p.distanceKm <= parseFloat(this.distanceFilter));
+                    }
+
+                    if (this.availabilityFilter) {
+                        list = list.filter(p => p.onlineStatus);
+                    }
+
+                    if (this.priceSort === 'low') {
+                        list.sort((a, b) => a.hourlyRate - b.hourlyRate);
+                    } else if (this.priceSort === 'high') {
+                        list.sort((a, b) => b.hourlyRate - a.hourlyRate);
+                    } else if (this.priceSort === 'rating') {
+                        list.sort((a, b) => b.rating - a.rating);
+                    }
+
+                    return list;
+                },
+
+                userBookings() {
+                    if (!this.currentUser) return [];
+                    return this.currentUser.role === 'customer'
+                        ? this.bookings.filter(b => b.customerName === this.currentUser.name)
+                        : this.bookings.filter(b => b.providerName === this.currentUser.name);
+                },
+
+                providerBookings() {
+                    return this.bookings;
+                },
+
+                pendingBookingsCount() {
+                    return this.userBookings.filter(b => b.status === 'Confirmed' || b.status === 'En-Route' || b.status === 'In Progress').length;
+                },
+
+                activeReminderBooking() {
+                    if (!this.currentUser || this.currentUser.role !== 'customer') return null;
+                    return this.bookings.find(b => b.customerName === this.currentUser.name && (b.status === 'En-Route' || b.status === 'In Progress' || b.status === 'Confirmed'));
+                },
+
+                currentChat() {
+                    return this.chats.find(c => c.id === this.activeChatId);
+                }
+            },
+
+            methods: {
+                showToast(msg, type = 'success') {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3500);
+                },
+
+                handleLogin() {
+                    this.currentUser = {
+                        name: this.authRole === 'customer' ? 'Alex Johnson' : 'Sam\'s Electric Pro',
+                        email: this.loginForm.email || 'user@example.com',
+                        role: this.authRole,
+                        zip: '10001'
+                    };
+                    this.showToast(`Logged in successfully!`);
+                },
+
+                handleRegister() {
+                    this.currentUser = {
+                        name: this.registerForm.name || 'New Member',
+                        email: this.registerForm.email,
+                        role: this.authRole,
+                        zip: this.registerForm.zip || '10001'
+                    };
+                    this.showToast(`Welcome to FixIt! Registered as ${this.currentUser.role}.`);
+                },
+
+                quickDemoLogin(role) {
+                    this.authRole = role;
+                    if (role === 'customer') {
+                        this.currentUser = { name: 'Alex Johnson', email: 'alex@example.com', role: 'customer', zip: '10001' };
+                    } else {
+                        this.currentUser = { name: 'Sam\'s Electric Pro', email: 'sam@electric.com', role: 'provider', zip: '10001' };
+                    }
+                    this.showToast(`Switched view to Demo ${role.toUpperCase()}`);
+                },
+
+                logout() {
+                    this.currentUser = null;
+                    this.activeTab = 'dashboard';
+                    this.showToast('Logged out.');
+                },
+
+                toggleUserRole() {
+                    if (this.currentUser) {
+                        this.currentUser.role = this.currentUser.role === 'customer' ? 'provider' : 'customer';
+                        this.showToast(`Switched role to ${this.currentUser.role.toUpperCase()}`);
+                    }
+                },
+
+                toggleProviderOnline() {
+                    this.providerOnline = !this.providerOnline;
+                    this.showToast(`Availability set to: ${this.providerOnline ? 'ONLINE' : 'OFFLINE'}`);
+                },
+
+                claimAdOffer(ad) {
+                    const matched = this.providers.find(p => p.name === ad.providerName) || this.providers[0];
+                    this.openBookingModal(matched, ad.title);
+                },
+
+                openProviderProfile(provider) {
+                    this.profileModal.provider = provider;
+                    this.profileModal.activeTab = 'about';
+                    this.profileModal.open = true;
+                },
+
+                openBookingModal(provider, serviceName = '') {
+                    this.bookingModal.provider = provider;
+                    this.bookingModal.service = serviceName || `${provider.trade} Repair Service`;
+                    this.bookingModal.address = '742 Evergreen Terrace, 10001';
+                    this.bookingModal.date = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                    this.bookingModal.open = true;
+                },
+
+                confirmBooking() {
+                    this.bookings.unshift({
+                        id: 'BK-' + Math.floor(1000 + Math.random() * 9000),
+                        service: this.bookingModal.service,
+                        customerName: this.currentUser.name,
+                        providerName: this.bookingModal.provider.name,
+                        date: this.bookingModal.date,
+                        time: this.bookingModal.time,
+                        address: this.bookingModal.address,
+                        status: 'Confirmed',
+                        reviewed: false
+                    });
+                    this.bookingModal.open = false;
+                    this.showToast('Service slot booked successfully!');
+                    this.activeTab = 'bookings';
+                },
+
+                joinCoPool(pool) {
+                    if (pool.currentParticipants < pool.requiredParticipants) {
+                        pool.currentParticipants++;
+                        this.showToast(`Joined Co-Booking at ${pool.buildingName}! 25% Discount Applied.`);
+                    }
+                },
+
+                openAiDiagnosticModal() {
+                    this.aiDiagnostic.problemDesc = '';
+                    this.aiDiagnostic.estimatedCost = null;
+                    this.aiDiagnostic.open = true;
+                },
+
+                runAiScan() {
+                    this.aiDiagnostic.estimatedCost = { min: 45, max: 65 };
+                    this.showToast('AI Diagnostic Scan Complete!');
+                },
+
+                startVideoDiagnostic() {
+                    this.aiDiagnostic.open = false;
+                    this.showToast('Connecting to 5-Min Video Call session...');
+                },
+
+                openLiveTracker(booking) {
+                    this.trackingModal.booking = booking;
+                    this.trackingModal.open = true;
+                },
+
+                updateJobStage(job, stage) {
+                    job.status = stage;
+                    this.showToast(`Job status updated to "${stage}"`);
+                },
+
+                openFeedbackAndPayment(booking) {
+                    this.paymentModal.booking = booking;
+                    this.paymentModal.rating = 5;
+                    this.paymentModal.comment = '';
+                    this.paymentModal.open = true;
+                },
+
+                processPayment() {
+                    if (this.paymentModal.booking) {
+                        this.paymentModal.booking.status = 'Paid';
+                        this.paymentModal.booking.reviewed = true;
+                    }
+                    this.paymentModal.open = false;
+                    this.showToast('Payment completed & feedback registered!');
+                },
+
+                purchaseAdCampaign() {
+                    this.ads.unshift({
+                        id: Date.now(),
+                        title: this.adForm.title,
+                        discount: this.adForm.discount,
+                        description: this.adForm.description,
+                        providerName: this.currentUser.name,
+                        category: this.adForm.category,
+                        icon: '📢'
+                    });
+                    this.showToast(`Paid $${this.adForm.price} for ${this.adForm.duration}-Day Local Campaign! Banner Published.`);
+                    this.activeTab = 'dashboard';
+                },
+
+                sendMessage() {
+                    if (!this.newMessageText.trim() || !this.currentChat) return;
+                    this.currentChat.messages.push({
+                        sender: this.currentUser.name,
+                        text: this.newMessageText,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    });
+                    this.currentChat.lastMessage = this.newMessageText;
+                    this.newMessageText = '';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

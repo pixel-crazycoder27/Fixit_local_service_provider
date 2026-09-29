@@ -1,0 +1,12 @@
+{
+  "name": "fixit-service-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FixIt service marketplace prototype with SQLite authentication",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
