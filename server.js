@@ -189,7 +189,7 @@ const server = createServer(async (request, response) => {
         if (url.pathname.startsWith('/api/')) return await handleApi(request, response, url);
 
         const requestPath = decodeURIComponent(url.pathname);
-        const fileName = requestPath === '/' ? 'fixit_service_marketplace (1).html' : requestPath.slice(1);
+        const fileName = requestPath === '/' ? 'index.html' : requestPath.slice(1);
         const filePath = path.resolve(__dirname, fileName);
         if (!filePath.startsWith(`${__dirname}${path.sep}`)) {
             response.writeHead(403).end('Forbidden');
